@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Demo eksperymentów Dondersa</title>
+  <title>Donders Reaction-Time Experiments — Demo</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
@@ -211,39 +211,38 @@
 <body>
   <div class="container">
     <div class="card">
-      <h1>Demo eksperymentów Dondersa</h1>
+      <h1>Donders’ Classic Reaction-Time Experiments</h1>
       <p>
-        Ta aplikacja pokazuje trzy klasyczne typy zadań: <b>czas reakcji prosty</b>,
-        <b>go/no-go</b> oraz <b>czas reakcji z wyborem</b>. To wersja demonstracyjna do zajęć,
-        a nie narzędzie do precyzyjnych badań laboratoryjnych.
+        This application demonstrates three tasks: <b>simple reaction time</b>,
+        <b>go/no-go</b>, and <b>choice reaction time</b>. It is intended for teaching and demonstration, not as a validated laboratory measurement tool.
       </p>
 
       <div class="controls">
         <div>
-          <label for="trialsPerBlock">Liczba prób na blok</label>
+          <label for="trialsPerBlock">Trials per block</label>
           <input id="trialsPerBlock" type="number" min="3" max="30" value="8" />
         </div>
         <div>
-          <label for="participantName">Badany / grupa</label>
-          <input id="participantName" type="text" placeholder="np. Student 1" />
+          <label for="participantName">Participant / group</label>
+          <input id="participantName" type="text" placeholder="e.g., Student 1" />
         </div>
         <div>
           <label>&nbsp;</label>
-          <button id="startBtn">Rozpocznij demo</button>
+          <button id="startBtn">Start demo</button>
         </div>
       </div>
       <div class="footer-note">
-        Reakcje: spacja dla zadań prostych i go/no-go; klawisze <b>A</b> oraz <b>L</b> dla zadania z wyborem.
+        Responses: press <b>Space</b> for the simple and go/no-go tasks; press <b>A</b> or <b>L</b> for the choice task.
       </div>
     </div>
 
     <div class="row">
       <div class="card">
-        <h2>Przebieg zadania</h2>
+        <h2>Task</h2>
         <div class="experiment-area" id="experimentArea">
           <div class="center-box" id="centerBox">
-            <div class="big">Naciśnij „Rozpocznij demo”</div>
-            <p>Każdy blok zaczyna się krótką instrukcją. Potem patrz na środek ekranu i reaguj jak najszybciej.</p>
+            <div class="big">Click “Start demo”</div>
+            <p>Each block begins with brief instructions. Then look at the center of the screen and respond as quickly as possible.</p>
           </div>
         </div>
         <div class="status" id="statusText"></div>
@@ -251,34 +250,34 @@
       </div>
 
       <div class="card">
-        <h2>Instrukcje</h2>
+        <h2>Instructions</h2>
         <div id="instructionPanel">
-          <p><b>1. Reakcja prosta:</b> gdy pojawi się bodziec, naciśnij <b>spację</b>.</p>
-          <p><b>2. Go / no-go:</b> naciśnij <b>spację</b> tylko dla <b>zielonego</b> bodźca. Nie reaguj na czerwony.</p>
-          <p><b>3. Reakcja z wyborem:</b> naciśnij <b>A</b> dla czerwonego bodźca i <b>L</b> dla zielonego.</p>
+          <p><b>1. Simple reaction time:</b> press <b>Space</b> when the stimulus appears.</p>
+          <p><b>2. Go/no-go:</b> press <b>Space</b> only for the <b>green</b> stimulus. Do not respond to red.</p>
+          <p><b>3. Choice reaction time:</b> press <b>A</b> for red and <b>L</b> for green.</p>
           <div class="key-panel">
-            <div class="key-chip">Spacja = reakcja</div>
-            <div class="key-chip">A = czerwony</div>
-            <div class="key-chip">L = zielony</div>
+            <div class="key-chip">Space = respond</div>
+            <div class="key-chip">A = red</div>
+            <div class="key-chip">L = green</div>
           </div>
         </div>
       </div>
     </div>
 
     <div class="card hidden" id="resultsCard">
-      <h2>Wyniki</h2>
+      <h2>Results</h2>
       <canvas id="rtChart" height="110"></canvas>
 
       <div class="summary-grid" id="summaryGrid"></div>
 
-      <h3>Surowe dane z prób</h3>
+      <h3>Trial-level data</h3>
       <table>
         <thead>
           <tr>
-            <th>Typ zadania</th>
-            <th>Nr próby</th>
-            <th>Bodziec</th>
-            <th>Poprawność</th>
+            <th>Task type</th>
+            <th>Trial</th>
+            <th>Stimulus</th>
+            <th>Correct</th>
             <th>RT (ms)</th>
           </tr>
         </thead>
@@ -313,6 +312,10 @@
     const resultsCard = document.getElementById('resultsCard');
     const resultsTableBody = document.getElementById('resultsTableBody');
     const summaryGrid = document.getElementById('summaryGrid');
+
+    // User-facing labels only. Original internal trial codes remain unchanged.
+    const taskNames = { 'prosty': 'Simple', 'go-no-go': 'Go/no-go', 'wybór': 'Choice' };
+    const stimulusNames = { 'niebieski': 'BLUE', 'zielony': 'GREEN', 'czerwony': 'RED' };
 
     function shuffle(array) {
       const arr = [...array];
@@ -377,17 +380,17 @@
       return [
         {
           type: 'prosty',
-          instruction: 'Reakcja prosta: gdy pojawi się niebieski kwadrat, naciśnij SPACJĘ.',
+          instruction: 'Simple reaction time: press SPACE when the blue square appears.',
           trials: simpleTrials
         },
         {
           type: 'go-no-go',
-          instruction: 'Go / No-Go: naciśnij SPACJĘ tylko gdy pojawi się zielony kwadrat. Nie reaguj na czerwony.',
+          instruction: 'Go/no-go: press SPACE only when the green square appears. Do not respond to red.',
           trials: goNoGoTrials
         },
         {
           type: 'wybór',
-          instruction: 'Reakcja z wyborem: naciśnij A dla czerwonego i L dla zielonego bodźca.',
+          instruction: 'Choice reaction time: press A for red and L for green.',
           trials: choiceTrials
         }
       ];
@@ -433,12 +436,12 @@
       const block = state.blocks[state.currentBlockIndex];
       state.inInstructionScreen = true;
       setCenterHTML(`
-        <div class="big">Blok ${state.currentBlockIndex + 1}: ${block.type}</div>
+        <div class="big">Block ${state.currentBlockIndex + 1}: ${taskNames[block.type]}</div>
         <p>${block.instruction}</p>
-        <p><b>Naciśnij Enter, aby rozpocząć blok.</b></p>
+        <p><b>Press Enter to start this block.</b></p>
       `);
-      statusText.textContent = 'Czekam na rozpoczęcie bloku...';
-      progressText.textContent = `Blok ${state.currentBlockIndex + 1} z ${state.blocks.length}`;
+      statusText.textContent = 'Waiting to start the block…';
+      progressText.textContent = `Block ${state.currentBlockIndex + 1} of ${state.blocks.length}`;
     }
 
     function nextTrial() {
@@ -457,8 +460,8 @@
       state.responseCaptured = false;
       state.trialStartTime = null;
 
-      progressText.textContent = `Blok ${state.currentBlockIndex + 1}/${state.blocks.length} • Próba ${state.currentTrialIndex + 1}/${block.trials.length}`;
-      statusText.textContent = 'Przygotuj się...';
+      progressText.textContent = `Block ${state.currentBlockIndex + 1}/${state.blocks.length} • Trial ${state.currentTrialIndex + 1}/${block.trials.length}`;
+      statusText.textContent = 'Get ready…';
       setCenterHTML('<div class="fixation">+</div>');
 
       const fixationDuration = 600 + Math.floor(Math.random() * 900);
@@ -470,12 +473,12 @@
       const cssClass = getStimulusClass(trial.stimulus);
       setCenterHTML(`
         <div>
-          <div class="stimulus ${cssClass}">${trial.stimulus}</div>
+          <div class="stimulus ${cssClass}">${stimulusNames[trial.stimulus]}</div>
         </div>
       `);
       state.trialStartTime = performance.now();
       state.awaitingResponse = true;
-      statusText.textContent = 'Reaguj teraz.';
+      statusText.textContent = 'Respond now.';
 
       const stimulusWindow = trial.blockType === 'go-no-go' && !trial.isGo ? 1200 : 2000;
       const t2 = setTimeout(() => endTrialNoResponse(), stimulusWindow);
@@ -530,8 +533,8 @@
         expectedResponse: trial.correctKey
       });
 
-      setCenterHTML(`<div class="big">${correct ? 'Poprawnie' : 'Błąd'}</div><p>${rt} ms</p>`);
-      statusText.textContent = correct ? 'Odpowiedź poprawna.' : 'Odpowiedź niepoprawna.';
+      setCenterHTML(`<div class="big">${correct ? 'Correct' : 'Incorrect'}</div><p>${rt} ms</p>`);
+      statusText.textContent = correct ? 'Correct response.' : 'Incorrect response.';
 
       const t3 = setTimeout(() => nextTrial(), 700);
       state.timerIds.push(t3);
@@ -560,8 +563,8 @@
         expectedResponse: trial.correctKey
       });
 
-      setCenterHTML(`<div class="big">${correct ? 'Poprawnie — brak reakcji' : 'Brak reakcji'}</div>`);
-      statusText.textContent = correct ? 'Prawidłowo wstrzymana reakcja.' : 'Za wolno albo brak reakcji.';
+      setCenterHTML(`<div class="big">${correct ? 'Correct — no response' : 'No response'}</div>`);
+      statusText.textContent = correct ? 'Correctly withheld response.' : 'Too slow or no response.';
 
       const t4 = setTimeout(() => nextTrial(), 700);
       state.timerIds.push(t4);
@@ -570,10 +573,10 @@
     function finishExperiment() {
       clearTimers();
       setCenterHTML(`
-        <div class="big">Koniec demo</div>
-        <p>Wyniki znajdują się poniżej.</p>
+        <div class="big">Demo complete</div>
+        <p>Your results are shown below.</p>
       `);
-      statusText.textContent = 'Demo zakończone.';
+      statusText.textContent = 'Demo complete.';
       progressText.textContent = '';
       renderResults();
     }
@@ -583,10 +586,10 @@
 
       resultsTableBody.innerHTML = state.results.map(row => `
         <tr>
-          <td>${row.taskType}</td>
+          <td>${taskNames[row.taskType]}</td>
           <td>${row.trialNo}</td>
-          <td>${row.stimulus}</td>
-          <td>${row.correct ? 'tak' : 'nie'}</td>
+          <td>${stimulusNames[row.stimulus]}</td>
+          <td>${row.correct ? 'Yes' : 'No'}</td>
           <td>${row.rt !== null ? row.rt : '—'}</td>
         </tr>
       `).join('');
@@ -608,9 +611,9 @@
 
       summaryGrid.innerHTML = taskLabels.map((task, i) => `
         <div class="stat-box">
-          <h3>${task}</h3>
-          <p><b>Średni RT:</b> ${averageRTs[i] ?? '—'} ms</p>
-          <p><b>Poprawność:</b> ${accuracies[i] ?? '—'}%</p>
+          <h3>${taskNames[task]}</h3>
+          <p><b>Mean RT:</b> ${averageRTs[i] ?? '—'} ms</p>
+          <p><b>Accuracy:</b> ${accuracies[i] ?? '—'}%</p>
         </div>
       `).join('');
 
@@ -620,10 +623,10 @@
       state.chart = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: ['Prosty', 'Go / No-Go', 'Wybór'],
+          labels: ['Simple', 'Go/no-go', 'Choice'],
           datasets: [
             {
-              label: 'Średni czas reakcji (ms)',
+              label: 'Mean reaction time (ms)',
               data: averageRTs,
               borderWidth: 1
             }
@@ -636,8 +639,8 @@
             title: {
               display: true,
               text: state.participantName
-                ? `Średnie czasy reakcji — ${state.participantName}`
-                : 'Średnie czasy reakcji'
+                ? `Mean reaction times — ${state.participantName}`
+                : 'Mean reaction times'
             }
           },
           scales: {
@@ -645,7 +648,7 @@
               beginAtZero: true,
               title: {
                 display: true,
-                text: 'Milisekundy'
+                text: 'Milliseconds'
               }
             }
           }
