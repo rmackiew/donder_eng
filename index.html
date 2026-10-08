@@ -270,6 +270,11 @@
 
       <div class="summary-grid" id="summaryGrid"></div>
 
+      <div style="margin-top: 18px; margin-bottom: 12px;">
+        <button id="downloadCsvBtn" type="button">Download trial data (CSV)</button>
+        <p class="footer-note">Save your results before refreshing or closing this page.</p>
+      </div>
+
       <h3>Trial-level data</h3>
       <table>
         <thead>
@@ -299,7 +304,8 @@
       timerIds: [],
       chart: null,
       inInstructionScreen: false,
-      participantName: ''
+      participantName: '',
+      sessionDate: ''
     };
 
     const experimentArea = document.getElementById('experimentArea');
@@ -312,6 +318,7 @@
     const resultsCard = document.getElementById('resultsCard');
     const resultsTableBody = document.getElementById('resultsTableBody');
     const summaryGrid = document.getElementById('summaryGrid');
+    const downloadCsvBtn = document.getElementById('downloadCsvBtn');
 
     // User-facing labels only. Original internal trial codes remain unchanged.
     const taskNames = { 'prosty': 'Simple', 'go-no-go': 'Go/no-go', 'wybór': 'Choice' };
@@ -412,6 +419,7 @@
       state.responseCaptured = false;
       state.currentTrial = null;
       state.participantName = participantNameInput.value.trim();
+      state.sessionDate = new Date().toISOString();
 
       const trialsPerBlock = Math.max(3, Math.min(30, Number(trialsPerBlockInput.value) || 8));
       trialsPerBlockInput.value = trialsPerBlock;
@@ -581,6 +589,33 @@
       renderResults();
     }
 
+    function downloadResultsCSV() {
+      if (!state.results.length) return;
+      const header = ['participant_id', 'session_datetime', 'task_type', 'trial_number',
+        'stimulus', 'correct', 'reaction_time_ms', 'responded', 'expected_key'];
+      const rows = state.results.map(trial => [
+        state.participantName, state.sessionDate, taskNames[trial.taskType] || trial.taskType,
+        trial.trialNo, stimulusNames[trial.stimulus] || trial.stimulus,
+        trial.correct ? 1 : 0, trial.rt === null ? '' : trial.rt,
+        trial.responded ? 1 : 0,
+        trial.expectedResponse === ' ' ? 'Space' : (trial.expectedResponse || 'None')
+      ]);
+      // Quote every cell, including participant names that may contain commas or quotes.
+      const csvCell = value => '"' + String(value ?? '').replace(/"/g, '""') + '"';
+      const csvText = [header, ...rows].map(row => row.map(csvCell).join(',')).join('\r\n');
+      const blob = new Blob(['\uFEFF', csvText], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      const safeName = (state.participantName || 'participant').replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 60);
+      const date = state.sessionDate.slice(0, 10);
+      anchor.href = url;
+      anchor.download = `donders_${safeName}_${date}.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
     function renderResults() {
       resultsCard.classList.remove('hidden');
 
@@ -666,6 +701,7 @@
     });
 
     startBtn.addEventListener('click', startExperiment);
+    downloadCsvBtn.addEventListener('click', downloadResultsCSV);
   </script>
 </body>
 </html>
